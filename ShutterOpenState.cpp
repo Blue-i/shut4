@@ -21,7 +21,7 @@ ShutterOpenState::~ShutterOpenState() {
 }
 
 void ShutterOpenState::enter(Shutter* shutter) {
-//	Log.Debug("Shutter entering open state");
+	Log.Debug("Sh > O%s",CR);
 }
 
 void ShutterOpenState::execute(Shutter* shutter) {
@@ -42,7 +42,7 @@ void ShutterOpenState::execute(Shutter* shutter) {
 		}
 
 	unsigned long time = millis();
-	if(abs(time - shutter->lastPollTime) < Shutter::pollInterval) return;
+	if((time - shutter->lastPollTime) < Shutter::pollInterval) return;
 
 	PJLinkParser::PJLinkResponse response = shutter->getShutterState();
 
@@ -58,7 +58,7 @@ void ShutterOpenState::execute(Shutter* shutter) {
 }
 
 void ShutterOpenState::exit(Shutter* Shutter) {
-//	Log.Debug("Shutter exiting open state");
+	Log.Debug("Sh < O%s",CR);
 }
 
 ShutterOpenState* ShutterOpenState::instance() {

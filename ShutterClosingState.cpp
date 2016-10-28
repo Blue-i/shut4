@@ -21,20 +21,22 @@ ShutterClosingState::~ShutterClosingState() {
 }
 
 void ShutterClosingState::enter(Shutter* shutter) {
-//	Log.Debug("Shutter entering closing state");
-	shutter->projector->getClient()->print(Shutter::closeMessage);
+	Log.Debug("Sh > Clg%s",CR);
+	OS48_ATOMIC_BLOCK{
+		shutter->projector->getClient()->print(Shutter::closeMessage);
+	}
 	shutter->lastPollTime = 0;
 }
 
 void ShutterClosingState::execute(Shutter* shutter) {
 	unsigned long time = millis();
-	if(abs(time - shutter->lastPollTime) < Shutter::pollInterval) return;
+	if((time - shutter->lastPollTime) < Shutter::pollInterval) return;
 
 	PJLinkParser::PJLinkResponse response = shutter->getShutterState();
 
 	switch(response){
 	case PJLinkParser::OK:
-//		Log.Debug("Shutter got OK");
+		Log.Debug("Sh OK");
 		shutter->stateMachine.changeState(ShutterClosedState::instance());
 		break;
 	default:
@@ -43,7 +45,7 @@ void ShutterClosingState::execute(Shutter* shutter) {
 }
 
 void ShutterClosingState::exit(Shutter*) {
-//	Log.Debug("Shutter exiting closing state");
+	Log.Debug("Sh < Clg%s",CR);
 
 }
 

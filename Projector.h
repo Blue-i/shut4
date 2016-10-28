@@ -9,7 +9,6 @@
 #define PROJECTOR_H_
 
 #include <Ethernet2.h>
-#include "QueueArray.h"
 #include "StateMachine.h"
 #include "Component.h"
 
@@ -21,16 +20,18 @@ class Projector {
 	uint16_t lastPollTime;
 	EthernetClient client;
 	StateMachine<Projector> stateMachine;
-	QueueArray<Component<Projector>*> componentQueue;
+	Component<Projector>* component;
 	const IPAddress * ip;
 	const int port;
-	char buffer[32];
+
 
 	friend class ProjectorConnectedState;
 	friend class ProjectorConnectingState;
 	friend class ProjectorPollWaitState;
 
 public:
+	char buffer[32];
+
 	Projector(IPAddress * ip, int port);
 	virtual ~Projector();
 	void attachComponent(Component<Projector>*);

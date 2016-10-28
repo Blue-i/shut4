@@ -21,19 +21,20 @@ ShutterOpeningState::~ShutterOpeningState() {
 }
 
 void ShutterOpeningState::enter(Shutter* shutter) {
-//	Log.Debug("Shutter entering opening state");
+	Log.Debug("Sh > Op%s",CR);
 	shutter->projector->getClient()->print(Shutter::openMessage);
 	shutter->lastPollTime = 0;
 }
 
 void ShutterOpeningState::execute(Shutter* shutter) {
 	unsigned long time = millis();
-	if(abs(time - shutter->lastPollTime) < Shutter::pollInterval) return;
+	if((time - shutter->lastPollTime) < Shutter::pollInterval) return;
 
 	PJLinkParser::PJLinkResponse response = shutter->getShutterState();
 
 	switch(response){
 	case PJLinkParser::OK:
+		Log.Debug("Sh OK%s",CR);
 		shutter->stateMachine.changeState(ShutterClosedState::instance());
 		break;
 	default:
@@ -42,7 +43,7 @@ void ShutterOpeningState::execute(Shutter* shutter) {
 }
 
 void ShutterOpeningState::exit(Shutter*) {
-//	Log.Debug("Shutter exiting opening state");
+	Log.Debug("Sh < Op%s",CR);
 }
 
 ShutterOpeningState* ShutterOpeningState::instance() {

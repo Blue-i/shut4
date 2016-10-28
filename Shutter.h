@@ -23,7 +23,6 @@ class Shutter : public Component<Projector>, public EventHandler {
 	static const char * closeMessage;
 
 	const static unsigned long timeout = 125;
-	const static size_t bufferSize = 128;
 	const static unsigned long pollInterval = 1000;
 
 	enum ShutterTargetState {
@@ -34,7 +33,6 @@ class Shutter : public Component<Projector>, public EventHandler {
 
 	os48::Mutex targetMutex;
 	unsigned long lastPollTime;
-	uint8_t buffer[bufferSize];
 
 	StateMachine<Shutter> stateMachine;
 	Projector * projector;

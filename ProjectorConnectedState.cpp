@@ -9,7 +9,6 @@
 #include "ProjectorPollWaitState.h"
 #include <Logging.h>
 #include "os48.h"
-#define LOGLEVEL LOG_LEVEL_NOOUTPUT
 ProjectorConnectedState::ProjectorConnectedState() {
 	// TODO Auto-generated constructor stub
 
@@ -33,13 +32,9 @@ void ProjectorConnectedState::execute(Projector* projector) {
 		return;
 	}
 
-
-//	Log.Debug("Proj Contd%s",CR);
-//	if(!projector->componentQueue.isEmpty()){
-//		Component<Projector>* component = projector->componentQueue.dequeue();
-//		component->run();
-//		projector->componentQueue.enqueue(component);
-//	}
+	if(projector->component != nullptr){
+		projector->component->run();
+	}
 
 }
 

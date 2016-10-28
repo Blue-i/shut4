@@ -1,4 +1,3 @@
-#include <QueueArray.h>
 
 #define LOGLEVEL LOG_LEVEL_DEBUG
 #include "Arduino.h"
@@ -6,6 +5,7 @@
 #include <IPAddress.h>
 #include <SPI.h>
 #include "Projector.h"
+#include "Shutter.h"
 #include "os48.h"
 //#include "EventManager.h"
 #include "Events.h"
@@ -39,7 +39,7 @@ Projector p1(&ip1, PJLINK_PORT);
 //Projector p2(&ip2, PJLINK_PORT);
 //Projector p3(&ip3, PJLINK_PORT);
 
-//Shutter s1;
+Shutter s1;
 //Shutter s2;
 //Shutter s3;
 
@@ -93,10 +93,9 @@ void setup()
 //	EventManager::instance()->addHandler(&s3);
 
 	delay(3000);
-	Serial.print("Starting!\r\n");
 
 //	te = scheduler->createTask(&eventLoop, 60);
-	t1 = scheduler->createTask(&loop1, 120);
+	t1 = scheduler->createTask(&loop1, 240);
 //	t2 = scheduler->createTask(&loop2, 60);
 //	t3 = scheduler->createTask(&loop3, 60);
 

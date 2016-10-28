@@ -23,7 +23,7 @@ ShutterUnknownState::~ShutterUnknownState() {
 
 void ShutterUnknownState::enter(Shutter* shutter) {
 	OS48_NO_CS_BLOCK{
-//		Log.Debug("Shutter entering unknown state");
+		Log.Debug("Sh > Uk%s",CR);
 	}
 }
 
@@ -47,7 +47,7 @@ void ShutterUnknownState::execute(Shutter* shutter) {
 
 void ShutterUnknownState::exit(Shutter* shutter) {
 	OS48_NO_CS_BLOCK{
-//		Log.Debug("Shutter exiting unknown state");
+		Log.Debug("Sh < Uk");
 	}
 }
 

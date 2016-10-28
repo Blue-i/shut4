@@ -8,7 +8,12 @@
 #include "EventManager.h"
 #include <Logging.h>
 
-EventManager::EventManager() : numHandlers(0), externalEventUpdate(false), externalEvent(NO_EVENT) {
+EventManager::EventManager() :
+	head(events),
+	tail(events),
+	numHandlers(0),
+	externalEventUpdate(false),
+	externalEvent(NO_EVENT) {
 	// TODO Auto-generated constructor stub
 
 }
@@ -19,8 +24,16 @@ EventManager::~EventManager() {
 
 void EventManager::queueEvent(Event e) {
 		mutex.lock();
-//		Log.Debug("EventManager got event %d", e);
-		events.enqueue(e);
+		if(head == tail){
+			*head = e;
+			tail = events + ((tail - events + 1) % MAX_EVENTS);
+		} else {
+			Event * next = events + ((tail - events + 1) % MAX_EVENTS);
+			if(next != head) {
+				*tail = e;
+				tail = next;
+			}
+		}
 		mutex.unlock();
 }
 
@@ -36,13 +49,14 @@ void EventManager::run() {
 	Event e = NO_EVENT;
 
 	mutex.lock();
-	if(!events.isEmpty()){
-		e = events.dequeue();
+	if(head != tail){
+		e = *head;
+		head = events + ((head - events + 1) % MAX_EVENTS);
 	}
 	mutex.unlock();
 
 	if(e != NO_EVENT){
-		for(size_t i = 0; i < numHandlers; i++){
+		for(uint8_t i = 0; i < numHandlers; i++){
 			handlers[i]->onEvent(e);
 		}
 	}
@@ -56,7 +70,7 @@ void EventManager::run() {
 	}
 
 	if(e != NO_EVENT){
-		for(size_t i = 0; i < numHandlers; i++){
+		for(uint8_t i = 0; i < numHandlers; i++){
 			handlers[i]->onEvent(e);
 		}
 	}

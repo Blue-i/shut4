@@ -14,6 +14,7 @@
 Projector::Projector(IPAddress * ip, int port) :
 	lastPollTime(0),
 	stateMachine(this),
+	component(nullptr),
 	ip(ip),
 	port(port)
 
@@ -37,9 +38,9 @@ EthernetClient* Projector::getClient() {
 	return &client;
 }
 
-void Projector::attachComponent(Component<Projector>* component) {
-	component->bind(this);
-	componentQueue.push(component);
+void Projector::attachComponent(Component<Projector>* c) {
+	c->bind(this);
+	component = c;
 }
 
 size_t Projector::readFor(char buffer[], uint16_t timeout) {

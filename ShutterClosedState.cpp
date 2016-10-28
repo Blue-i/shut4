@@ -21,8 +21,7 @@ ShutterClosedState::~ShutterClosedState() {
 }
 
 void ShutterClosedState::enter(Shutter* shutter) {
-	//write close message to client
-//	Log.Debug("SECS");
+	Log.Debug("Sh > C%s",CR);
 }
 
 void ShutterClosedState::execute(Shutter* shutter) {
@@ -43,7 +42,7 @@ void ShutterClosedState::execute(Shutter* shutter) {
 	}
 
 	unsigned long time = millis();
-	if(abs(time - shutter->lastPollTime) < Shutter::pollInterval) return;
+	if((time - shutter->lastPollTime) < Shutter::pollInterval) return;
 
 	PJLinkParser::PJLinkResponse response = shutter->getShutterState();
 
@@ -59,7 +58,7 @@ void ShutterClosedState::execute(Shutter* shutter) {
 }
 
 void ShutterClosedState::exit(Shutter* shutter) {
-//	Log.Debug("Shutter exiting closed state");
+	Log.Debug("Sh < C%s",CR);
 }
 
 ShutterClosedState* ShutterClosedState::instance() {

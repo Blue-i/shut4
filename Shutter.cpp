@@ -41,24 +41,11 @@ bool Shutter::isBound() {
 PJLinkParser::PJLinkResponse Shutter::getShutterState() {
 	if(!isBound()) return PJLinkParser::UNKNOWN;
 
-	projector->getClient()->print(Shutter::queryMessage);
+	uint8_t bytesRead = projector->readFor(projector->buffer,Shutter::timeout);
 
-	unsigned long startTime = millis();
-	size_t bytesRead = 0;
+	if(bytesRead == 0) return PJLinkParser::UNKNOWN;		//timeout or incomplete
 
-	while(abs(millis() - startTime) < Shutter::timeout && 	//not timed out
-			bytesRead < Shutter::bufferSize-1 &&			//not overflowing
-			buffer[bytesRead] != '\r'){						//not end of message
-
-		buffer[bytesRead] = projector->getClient()->read();
-		if(buffer[bytesRead] != -1) bytesRead++;
-	}
-
-	if(bytesRead == 0 || buffer[bytesRead] != '\r') return PJLinkParser::UNKNOWN;		//timeout or incomplete
-	buffer[++bytesRead] = '\0';
-
-	PJLinkParser::PJLinkResponse resp = PJLinkParser::instance()->parseMessage((char *) buffer);
-	buffer[0] = '\0';
+	PJLinkParser::PJLinkResponse resp = PJLinkParser::instance()->parseMessage((char *) projector->buffer);
 
 	return resp;
 }

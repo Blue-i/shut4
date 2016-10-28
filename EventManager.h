@@ -8,16 +8,18 @@
 #ifndef EVENTMANAGER_H_
 #define EVENTMANAGER_H_
 
-#include "QueueArray.h"
 #include "EventHandler.h"
 #include "Events.h"
 #include "os48.h"
 
 class EventManager {
 
-	static const int MAX_HANDLERS = 64;
-	QueueArray<Event> events;
+	static const uint8_t MAX_HANDLERS = 4;
+	static const uint8_t MAX_EVENTS = 16;
 	EventHandler * handlers[MAX_HANDLERS];
+	Event events[MAX_EVENTS];
+	Event * head;
+	Event * tail;
 	uint8_t numHandlers;
 
 	os48::Mutex mutex;
