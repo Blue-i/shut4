@@ -8,7 +8,6 @@
 #ifndef SHUTTER_SHUTTER_H_
 #define SHUTTER_SHUTTER_H_
 
-#include "StateMachine.h"
 #include "Component.h"
 #include "Projector.h"
 #include "PJLinkParser.h"
@@ -22,28 +21,48 @@ class Shutter : public Component<Projector>, public EventHandler {
 	static const char * openMessage;
 	static const char * closeMessage;
 
-	const static unsigned long timeout = 125;
+	const static unsigned long timeout 		= 125;
 	const static unsigned long pollInterval = 1000;
 
-	enum ShutterTargetState {
-			OPEN,
-			CLOSED,
-			UNKNOWN
-	} target;
+	enum STATE {
+		UNKNOWN,
+		OPEN,
+		OPENING,
+		CLOSED,
+		CLOSING
+	} state, target;
 
-	os48::Mutex targetMutex;
-	unsigned long lastPollTime;
-
-	StateMachine<Shutter> stateMachine;
-	Projector * projector;
+	os48::Mutex 			targetMutex;
+	unsigned long 			lastPollTime;
+	Projector * 			projector;
 
 	PJLinkParser::PJLinkResponse getShutterState();
 
-	friend class ShutterOpenState;
-	friend class ShutterUnknownState;
-	friend class ShutterClosedState;
-	friend class ShutterOpeningState;
-	friend class ShutterClosingState;
+	void enter();
+	void execute();
+	void exit();
+	void changeState(STATE);
+
+	void enterUnknown();
+	void executeUnknown();
+	void exitUnknown();
+
+	void enterOpen();
+	void executeOpen();
+	void exitOpen();
+
+	void enterOpening();
+	void executeOpening();
+	void exitOpening();
+
+	void enterClosed();
+	void executeClosed();
+	void exitClosed();
+
+	void enterClosing();
+	void executeClosing();
+	void exitClosing();
+
 
 public:
 	Shutter();

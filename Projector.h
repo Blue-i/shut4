@@ -9,25 +9,40 @@
 #define PROJECTOR_H_
 
 #include <Ethernet2.h>
-#include "StateMachine.h"
 #include "Component.h"
 
 class Projector {
+	enum STATE{
+		CONNECTING,
+		CONNECTED,
+		POLLING
+	} state;
 
-	static const uint16_t pollInterval = 3000;
-	static const uint16_t pollWait = 250;
+	static const uint16_t pollInterval 	= 	3000;
+	static const uint16_t pollWait 		= 	250;
 
-	uint16_t lastPollTime;
-	EthernetClient client;
-	StateMachine<Projector> stateMachine;
-	Component<Projector>* component;
-	const IPAddress * ip;
-	const int port;
+	uint16_t 				lastPollTime;
+	EthernetClient 			client;
+	Component<Projector>* 	component;
+	const IPAddress * 		ip;
+	const int 				port;
 
+	void enter();
+	void exit();
+	void execute();
+	void changeState(STATE);
 
-	friend class ProjectorConnectedState;
-	friend class ProjectorConnectingState;
-	friend class ProjectorPollWaitState;
+	void enterConnecting();
+	void executeConnecting();
+	void exitConnecting();
+
+	void enterConnected();
+	void executeConnected();
+	void exitConnected();
+
+	void enterPolling();
+	void executePolling();
+	void exitPolling();
 
 public:
 	char buffer[32];

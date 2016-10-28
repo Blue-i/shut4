@@ -84,7 +84,7 @@ void setup()
 
 	Ethernet.begin(mac, ip0, dnsip, gateway, subnet);
 
-//	p1.attachComponent(&s1);
+	p1.attachComponent(&s1);
 //	p2.attachComponent(&s2);
 //	p3.attachComponent(&s3);
 
