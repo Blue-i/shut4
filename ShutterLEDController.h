@@ -14,7 +14,7 @@
 
 class ShutterLEDController : public EventHandler {
 
-	static const uint16_t interval = 100;
+	static const uint16_t interval = 50;
 
 	enum STATE {
 		UNKNOWN,

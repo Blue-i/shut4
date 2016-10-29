@@ -8,7 +8,7 @@
 #include "Projector.h"
 #include "os48.h"
 #include <Logging.h>
-//#include "EventManager.h"
+#include "EventManager.h"
 
 Projector::Projector(IPAddress * ip, int port) :
 	state(CONNECTING),
@@ -125,6 +125,7 @@ void Projector::changeState(STATE s) {
 
 void Projector::enterConnecting() {
 	Log.Debug("Proj > Conn %s", CR);
+	EventManager::instance()->queueEvent(PROJECTOR_DISCONNECTED);
 }
 
 void Projector::executeConnecting() {
@@ -154,11 +155,11 @@ void Projector::executeConnecting() {
 
 void Projector::exitConnecting() {
 	Log.Debug("Proj < Conn%s", CR);
+	EventManager::instance()->queueEvent(PROJECTOR_CONNECTED);
 }
 
 void Projector::enterConnected() {
 	Log.Debug("Proj > Contd%s",CR);
-//	EventManager::instance()->queueEvent(PROJECTOR_CONNECTED);
 }
 
 void Projector::executeConnected() {
@@ -203,7 +204,6 @@ void Projector::executePolling() {
 			client.flush();
 //		}
 		changeState(CONNECTING);
-//		EventManager::instance()->queueEvent(PROJECTOR_DISCONNECTED);
 	}
 }
 

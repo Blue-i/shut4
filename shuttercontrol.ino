@@ -12,6 +12,11 @@
 #include <Logging.h>
 #include "ShutterLEDController.h"
 
+const int OPEN_BUTTON = 2;
+const int CLOSE_BUTTON = 3;
+const int OPEN_LED = 5;
+const int CLOSE_LED = 6;
+
 using namespace os48;
 Scheduler* scheduler = Scheduler::get();
 Task * te;
@@ -44,12 +49,6 @@ Projector p1(&ip1, PJLINK_PORT);
 Shutter s1;
 //Shutter s2;
 //Shutter s3;
-
-
-const int OPEN_BUTTON = 2;
-const int CLOSE_BUTTON = 3;
-const int OPEN_LED = 4;
-const int CLOSE_LED = 5;
 
 ShutterLEDController ledController(OPEN_LED,CLOSE_LED);
 
@@ -96,14 +95,14 @@ void setup()
 	EventManager::instance()->addHandler(&s1);
 //	EventManager::instance()->addHandler(&s2);
 //	EventManager::instance()->addHandler(&s3);
-//	EventManager::instance()->addHandler(&ledController);
+	EventManager::instance()->addHandler(&ledController);
 
 
 	delay(3000);
 
+	t1 = scheduler->createTask(&loop1, 120);
 	te = scheduler->createTask(&eventLoop, 60);
 //	tled = scheduler->createTask(&ledLoop, 60);
-	t1 = scheduler->createTask(&loop1, 240);
 //	t2 = scheduler->createTask(&loop2, 60);
 //	t3 = scheduler->createTask(&loop3, 60);
 	Log.Debug("S%s",CR);
@@ -118,6 +117,7 @@ void loop()
 void eventLoop(){
 	while(true){
 		EventManager::instance()->run();
+		ledController.run();
 	}
 }
 

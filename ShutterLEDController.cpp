@@ -229,11 +229,10 @@ void ShutterLEDController::checkState() {
 	m.unlock();
 
 	if(targetState == OPEN){
-		if(connCount > 0 && connCount == openCount){
+		if(connCount == openCount){
 			if(currentState != OPEN) changeState(OPEN);
 			return;
-		}
-		else if (currentState != OPENING) {
+		} else if (connCount > 0 && currentState != OPENING) {
 			changeState(OPENING);
 			return;
 		}
@@ -252,6 +251,7 @@ void ShutterLEDController::checkState() {
 }
 
 void ShutterLEDController::onEvent(Event e) {
+	Log.Debug("L EV %d%s",e,CR);
 	switch (e){
 	case NO_EVENT:
 		break;
@@ -272,7 +272,7 @@ void ShutterLEDController::onEvent(Event e) {
 		break;
 	case PROJECTOR_DISCONNECTED:
 		m.lock();
-		connected--;
+		if(connected > 0) connected--;
 		m.unlock();
 		break;
 	case SHUTTER_OPENED:
@@ -282,7 +282,7 @@ void ShutterLEDController::onEvent(Event e) {
 		break;
 	case SHUTTER_CLOSED:
 		m.lock();
-		open--;
+		if(open > 0) open--;
 		m.unlock();
 		break;
 	case MAX_EVENT:
