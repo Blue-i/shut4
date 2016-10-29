@@ -2,7 +2,7 @@
 //This is a automatic generated file
 //Please do not modify this file
 //If you touch this file your change will be overwritten during the next build
-//This file has been generated on 2016-10-29 10:24:05
+//This file has been generated on 2016-10-29 21:19:57
 
 #include "Arduino.h"
 #include "Arduino.h"
@@ -15,11 +15,13 @@
 #include "EventManager.h"
 #include "Events.h"
 #include <Logging.h>
+#include "ShutterLEDController.h"
 void isr_open() ;
 void isr_close() ;
 void setup() ;
 void loop() ;
 void eventLoop();
+void ledLoop();
 void loop1() ;
 void loop2() ;
 void loop3() ;

@@ -8,6 +8,7 @@
 #include <Logging.h>
 #include "Shutter.h"
 #include "Events.h"
+#include "EventManager.h"
 
 #include "PJLinkParser.h"
 
@@ -156,6 +157,7 @@ void Shutter::exitUnknown() {
 
 void Shutter::enterOpen() {
 	Log.Debug("Sh > O%s",CR);
+	EventManager::instance()->queueEvent(SHUTTER_OPENED);
 }
 
 void Shutter::executeOpen() {
@@ -233,6 +235,7 @@ void Shutter::exitOpening() {
 
 void Shutter::enterClosed() {
 	Log.Debug("Sh > C%s",CR);
+	EventManager::instance()->queueEvent(SHUTTER_CLOSED);
 }
 
 void Shutter::executeClosed() {

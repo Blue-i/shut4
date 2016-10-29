@@ -10,10 +10,12 @@
 #include "EventManager.h"
 #include "Events.h"
 #include <Logging.h>
+#include "ShutterLEDController.h"
 
 using namespace os48;
 Scheduler* scheduler = Scheduler::get();
 Task * te;
+Task * tled;
 Task * t1;
 //Task * t2;
 //Task * t3;
@@ -43,10 +45,13 @@ Shutter s1;
 //Shutter s2;
 //Shutter s3;
 
+
 const int OPEN_BUTTON = 2;
 const int CLOSE_BUTTON = 3;
-const int OPEN_LED = 11;
-const int CLOSE_LED = 12;
+const int OPEN_LED = 4;
+const int CLOSE_LED = 5;
+
+ShutterLEDController ledController(OPEN_LED,CLOSE_LED);
 
 void isr_open()
 {
@@ -73,11 +78,11 @@ void setup()
 
 	pinMode(OPEN_BUTTON, INPUT_PULLUP);
 	pinMode(CLOSE_BUTTON, INPUT_PULLUP);
-//	pinMode(CLOSE_LED, OUTPUT);
-//	pinMode(OPEN_LED, OUTPUT);
+	pinMode(CLOSE_LED, OUTPUT);
+	pinMode(OPEN_LED, OUTPUT);
 
-//	digitalWrite(CLOSE_LED, LOW);
-//	digitalWrite(OPEN_LED, LOW);
+	digitalWrite(CLOSE_LED, LOW);
+	digitalWrite(OPEN_LED, LOW);
 
 	attachInterrupt(digitalPinToInterrupt(OPEN_BUTTON), isr_open, FALLING);
 	attachInterrupt(digitalPinToInterrupt(CLOSE_BUTTON), isr_close, FALLING);
@@ -91,14 +96,17 @@ void setup()
 	EventManager::instance()->addHandler(&s1);
 //	EventManager::instance()->addHandler(&s2);
 //	EventManager::instance()->addHandler(&s3);
+//	EventManager::instance()->addHandler(&ledController);
+
 
 	delay(3000);
 
 	te = scheduler->createTask(&eventLoop, 60);
+//	tled = scheduler->createTask(&ledLoop, 60);
 	t1 = scheduler->createTask(&loop1, 240);
 //	t2 = scheduler->createTask(&loop2, 60);
 //	t3 = scheduler->createTask(&loop3, 60);
-
+	Log.Debug("S%s",CR);
 	scheduler->start();
 }
 
@@ -110,6 +118,12 @@ void loop()
 void eventLoop(){
 	while(true){
 		EventManager::instance()->run();
+	}
+}
+
+void ledLoop(){
+	while(true){
+		ledController.run();
 	}
 }
 
