@@ -13,17 +13,15 @@
 
 
 class PJLinkParser {
-	static const char* commandString[];
-
 	PJLinkParser();
 	PJLinkParser(const PJLinkParser &);
 	PJLinkParser& operator=(const PJLinkParser &);
 public:
 
-	enum PJLinkCommand {
-		AVMT = 0,
-		POWR = 1
-	};
+//	enum PJLinkCommand {
+//		AVMT,
+//		POWR
+//	};
 
 	enum PJLinkResponse {
 		UNKNOWN,

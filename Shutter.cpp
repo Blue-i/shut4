@@ -7,6 +7,7 @@
 
 #include <Logging.h>
 #include "Shutter.h"
+#include "Events.h"
 
 #include "PJLinkParser.h"
 
@@ -38,7 +39,10 @@ PJLinkParser::PJLinkResponse Shutter::getShutterState() {
 
 	uint8_t bytesRead = projector->readFor(projector->buffer,Shutter::timeout);
 
-	if(bytesRead == 0) return PJLinkParser::UNKNOWN;		//timeout or incomplete
+	if(bytesRead == 0) {
+		projector->reset();
+		return PJLinkParser::UNKNOWN;		//timeout or incomplete
+	}
 
 	PJLinkParser::PJLinkResponse resp = PJLinkParser::instance()->parseMessage((char *) projector->buffer);
 
@@ -120,16 +124,25 @@ void Shutter::enterUnknown() {
 }
 
 void Shutter::executeUnknown() {
-	targetMutex.lock();
-	STATE targetState = target;
-	targetMutex.unlock();
 
-	switch (targetState){
-	case CLOSED:
-		changeState(CLOSING);
+	unsigned long time = millis();
+	if((time - lastPollTime) < Shutter::pollInterval) return;
+
+	OS48_ATOMIC_BLOCK{
+		projector->getClient()->print(Shutter::queryMessage);
+	}
+
+	lastPollTime = millis();
+	PJLinkParser::PJLinkResponse response = getShutterState();
+
+	switch (response){
+	case PJLinkParser::AVMT_ON:
+		onEvent(SHUTTER_CLOSE_BUTTON_PRESS);
+		changeState(CLOSED);
 		break;
-	case OPEN:
-		changeState(OPENING);
+	case PJLinkParser::AVMT_OFF:
+		onEvent(SHUTTER_OPEN_BUTTON_PRESS);
+		changeState(OPEN);
 		break;
 	default:
 		//do nothing
@@ -138,7 +151,7 @@ void Shutter::executeUnknown() {
 }
 
 void Shutter::exitUnknown() {
-	Log.Debug("Sh < Uk");
+	Log.Debug("Sh < Uk%s",CR);
 }
 
 void Shutter::enterOpen() {
@@ -150,28 +163,27 @@ void Shutter::executeOpen() {
 	STATE targetState = target;
 	targetMutex.unlock();
 	//check target is still valid
-	switch(targetState){
-		case CLOSED:
-			changeState(CLOSING);
-			return;
-		case UNKNOWN:
-			changeState(UNKNOWN);
-			return;
-		default:
-			//continue to poll
-			break;
-		}
+	if(targetState == CLOSED){
+		changeState(CLOSING);
+		return;
+	}
 
 	unsigned long time = millis();
 	if((time - lastPollTime) < Shutter::pollInterval) return;
+
+	OS48_ATOMIC_BLOCK{
+		projector->getClient()->print(Shutter::queryMessage);
+		lastPollTime = millis();
+	}
 
 	PJLinkParser::PJLinkResponse response = getShutterState();
 
 	switch(response){
 	case PJLinkParser::AVMT_OFF:
-		changeState(CLOSED);
 		break;
 	case PJLinkParser::AVMT_ON:
+		onEvent(SHUTTER_CLOSE_BUTTON_PRESS);
+//		changeState(CLOSED);
 		break;
 	default:
 		changeState(UNKNOWN);
@@ -184,14 +196,25 @@ void Shutter::exitOpen() {
 
 void Shutter::enterOpening() {
 	Log.Debug("Sh > Op%s",CR);
-	projector->getClient()->print(Shutter::openMessage);
 	lastPollTime = 0;
 }
 
 void Shutter::executeOpening() {
-	unsigned long time = millis();
-	if((time - lastPollTime) < Shutter::pollInterval) return;
+	targetMutex.lock();
+	STATE targetState = target;
+	targetMutex.unlock();
 
+	if(targetState == CLOSED){
+		changeState(CLOSING);
+		return;
+	}
+
+	unsigned long elapsedTime = millis() - lastPollTime;
+	if(elapsedTime < Shutter::pollInterval) return;
+	OS48_ATOMIC_BLOCK{
+		projector->getClient()->print(Shutter::openMessage);
+		lastPollTime = millis();
+	}
 	PJLinkParser::PJLinkResponse response = getShutterState();
 
 	switch(response){
@@ -216,31 +239,35 @@ void Shutter::executeClosed() {
 	targetMutex.lock();
 	STATE targetState = target;
 	targetMutex.unlock();
-	//check target is still valid
-	switch(targetState){
-	case OPEN:
+
+	if(targetState == OPEN){
 		changeState(OPENING);
 		return;
-	case UNKNOWN:
-		changeState(UNKNOWN);
-		return;
-	default:
-		//continue to poll
-		break;
 	}
 
-	unsigned long time = millis();
-	if((time - lastPollTime) < Shutter::pollInterval) return;
+	unsigned long elapsedTime = millis() - lastPollTime;
+
+	if(elapsedTime < Shutter::pollInterval) {
+		return;
+	}
+
+	OS48_ATOMIC_BLOCK{
+		projector->getClient()->print(Shutter::queryMessage);
+		lastPollTime = millis();
+	}
 
 	PJLinkParser::PJLinkResponse response = getShutterState();
 
 	switch(response){
 	case PJLinkParser::AVMT_OFF:
+		Log.Debug("CS AVMT OFF%s",CR);
+		onEvent(SHUTTER_OPEN_BUTTON_PRESS);
 		break;
 	case PJLinkParser::AVMT_ON:
-		changeState(OPEN);
+		Log.Debug("CS AVMT ON%s",CR);
 		break;
 	default:
+		Log.Debug("CS AVMT UK%s",CR);
 		changeState(UNKNOWN);
 	}
 }
@@ -250,17 +277,27 @@ void Shutter::exitClosed() {
 }
 
 void Shutter::enterClosing() {
-	Log.Debug("Sh > Clg%s",CR);
-	OS48_ATOMIC_BLOCK{
-		projector->getClient()->print(Shutter::closeMessage);
-	}
+	Log.Debug("Sh > Clsg%s",CR);
 	lastPollTime = 0;
 }
 
 void Shutter::executeClosing() {
-	unsigned long time = millis();
-	if((time - lastPollTime) < Shutter::pollInterval) return;
+	targetMutex.lock();
+	STATE targetState = target;
+	targetMutex.unlock();
 
+	if(targetState == OPEN){
+		changeState(OPENING);
+		return;
+	}
+
+	unsigned long elapsedTime = millis() - lastPollTime;
+	if(elapsedTime < Shutter::pollInterval) return;
+
+	OS48_ATOMIC_BLOCK{
+		projector->getClient()->print(Shutter::closeMessage);
+		lastPollTime = millis();
+	}
 	PJLinkParser::PJLinkResponse response = getShutterState();
 
 	switch(response){
@@ -274,24 +311,20 @@ void Shutter::executeClosing() {
 }
 
 void Shutter::exitClosing() {
-	Log.Debug("Sh < Clg%s",CR);
+	Log.Debug("Sh < Clsg%s",CR);
 }
 
 void Shutter::onEvent(Event e) {
 	switch(e){
 	case SHUTTER_OPEN_BUTTON_PRESS:
 		targetMutex.lock();
-		OS48_NO_CS_BLOCK{
-			Log.Debug("Shutter got open event");
-		}
+		Log.Debug("Sh OPE%s",CR);
 		target = OPEN;
 		targetMutex.unlock();
 		break;
 	case SHUTTER_CLOSE_BUTTON_PRESS:
 		targetMutex.lock();
-		OS48_NO_CS_BLOCK{
-			Log.Debug("Shutter got close event");
-		}
+		Log.Debug("Sh CLE%s",CR);
 		target = CLOSED;
 		targetMutex.unlock();
 		break;

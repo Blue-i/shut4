@@ -21,8 +21,8 @@ class Shutter : public Component<Projector>, public EventHandler {
 	static const char * openMessage;
 	static const char * closeMessage;
 
-	const static unsigned long timeout 		= 125;
-	const static unsigned long pollInterval = 1000;
+	const static unsigned long timeout 		= 1000;
+	const static unsigned long pollInterval = 10000;
 
 	enum STATE {
 		UNKNOWN,

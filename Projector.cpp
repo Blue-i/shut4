@@ -127,21 +127,27 @@ void Projector::enterConnecting() {
 }
 
 void Projector::executeConnecting() {
-	if(client.connected()) {
+	bool status = false;
+	status = client.connected();
+	if(status) {
 		Log.Debug("Proj Conn!%s",CR);
 		changeState(CONNECTED);
 		return;
 	}
 
 	Log.Debug("Proj Conn..%s", CR);
-	OS48_ATOMIC_BLOCK{
-		client.stop();
-		client.flush();
-	}
-	if(client.connect(*ip, port)){
+
+	status = client.connect(*ip, port);
+	if(status){
 		readFor(buffer, pollWait);
 		Log.Debug("Proj %s%s", buffer, CR);
+		return;
 	}
+
+//	OS48_ATOMIC_BLOCK{
+		client.stop();
+		client.flush();
+//	}
 
 }
 
@@ -156,9 +162,8 @@ void Projector::enterConnected() {
 void Projector::executeConnected() {
 	uint16_t elapsedTime = 0;
 	elapsedTime = millis() - lastPollTime;
-	Log.Debug("Contd time %d%s ", elapsedTime, CR);
 	if(elapsedTime > pollInterval){
-		Log.Debug("Proj Polling");
+		Log.Debug("Proj Poll%s",CR);
 		changeState(POLLING);
 		return;
 	}
@@ -174,28 +179,37 @@ void Projector::exitConnected() {
 
 void Projector::enterPolling() {
 	Log.Debug("Proj > PW%s", CR);
-	OS48_ATOMIC_BLOCK{
-		client.print("%1POWR ?\r");
-	}
-	lastPollTime = millis();
+	lastPollTime = 0;
 }
 
 void Projector::executePolling() {
-	size_t bytesRead = 0;
-	bytesRead = readFor(buffer, pollWait);
-	if(bytesRead > 1){
-		Log.Debug("PW %s%s", buffer,CR);
-		changeState(CONNECTED);
-		return;
+	unsigned long elapsedTime = millis() - lastPollTime;
+	if(elapsedTime > Projector::pollInterval){
+		OS48_ATOMIC_BLOCK{
+			client.print("%1POWR ?\r");
+			lastPollTime = millis();
+		}
+		size_t bytesRead = 0;
+		bytesRead = readFor(buffer, pollWait);
+		if(bytesRead > 1){
+			Log.Debug("PW %s%s", buffer,CR);
+			changeState(CONNECTED);
+			return;
+		}
+//		OS48_ATOMIC_BLOCK{
+			client.stop();
+			client.flush();
+//		}
+		changeState(CONNECTING);
 	}
-	OS48_ATOMIC_BLOCK{
-		client.stop();
-		client.flush();
-	}
-	changeState(CONNECTING);
 }
 
 void Projector::exitPolling() {
 	Log.Debug("Proj < PW%s", CR);
 
+}
+
+void Projector::reset() {
+	client.stop();
+	changeState(CONNECTING);
 }

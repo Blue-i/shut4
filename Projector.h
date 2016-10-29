@@ -18,8 +18,8 @@ class Projector {
 		POLLING
 	} state;
 
-	static const uint16_t pollInterval 	= 	3000;
-	static const uint16_t pollWait 		= 	250;
+	static const uint16_t pollInterval 	= 	10000;
+	static const uint16_t pollWait 		= 	500;
 
 	uint16_t 				lastPollTime;
 	EthernetClient 			client;
@@ -51,6 +51,7 @@ public:
 	virtual ~Projector();
 	void attachComponent(Component<Projector>*);
 	void run();
+	void reset();
 	EthernetClient * getClient();
 	size_t readFor(char buffer[], uint16_t timeout);
 };

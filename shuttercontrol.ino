@@ -7,13 +7,13 @@
 #include "Projector.h"
 #include "Shutter.h"
 #include "os48.h"
-//#include "EventManager.h"
+#include "EventManager.h"
 #include "Events.h"
 #include <Logging.h>
 
 using namespace os48;
 Scheduler* scheduler = Scheduler::get();
-//Task * te;
+Task * te;
 Task * t1;
 //Task * t2;
 //Task * t3;
@@ -50,17 +50,17 @@ const int CLOSE_LED = 12;
 
 void isr_open()
 {
-//	Log.Debug("Open button");
-//	EventManager::instance()->externalEvent = SHUTTER_OPEN_BUTTON_PRESS;
-//	EventManager::instance()->externalEventUpdate = true;
+	Log.Debug("Open button%s",CR);
+	EventManager::instance()->externalEvent = SHUTTER_OPEN_BUTTON_PRESS;
+	EventManager::instance()->externalEventUpdate = true;
 	return;
 }
 
 void isr_close()
 {
-//	Log.Debug("Close button");
-//	EventManager::instance()->externalEvent = SHUTTER_CLOSE_BUTTON_PRESS;
-//	EventManager::instance()->externalEventUpdate = true;
+	Log.Debug("Close button%s",CR);
+	EventManager::instance()->externalEvent = SHUTTER_CLOSE_BUTTON_PRESS;
+	EventManager::instance()->externalEventUpdate = true;
 
 	return;
 }
@@ -88,13 +88,13 @@ void setup()
 //	p2.attachComponent(&s2);
 //	p3.attachComponent(&s3);
 
-//	EventManager::instance()->addHandler(&s1);
+	EventManager::instance()->addHandler(&s1);
 //	EventManager::instance()->addHandler(&s2);
 //	EventManager::instance()->addHandler(&s3);
 
 	delay(3000);
 
-//	te = scheduler->createTask(&eventLoop, 60);
+	te = scheduler->createTask(&eventLoop, 60);
 	t1 = scheduler->createTask(&loop1, 240);
 //	t2 = scheduler->createTask(&loop2, 60);
 //	t3 = scheduler->createTask(&loop3, 60);
@@ -109,7 +109,7 @@ void loop()
 
 void eventLoop(){
 	while(true){
-//		EventManager::instance()->run();
+		EventManager::instance()->run();
 	}
 }
 
