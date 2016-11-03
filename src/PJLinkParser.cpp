@@ -7,14 +7,14 @@
 
 #include "PJLinkParser.h"
 #include "Logging.h"
+#include "Arduino.h"
+#include <string.h>
 
-
-PJLinkParser::PJLinkResponse PJLinkParser::parseMessage(char * msg) {
+PJLinkParser::PJLinkResponse PJLinkParser::parseMessage(char const * msg) {
 
 	size_t length = strlen(msg);
-	Log.Debug("PLRP %s%s",msg,CR);
 	if(length < 9) return UNKNOWN;										//too short to be valid
-	if(msg[0] != '%' && msg[1] != '1' && msg[6] != '=') return UNKNOWN;	//does not conform to a PJLink Response
+	if(msg[0] != '%' || msg[1] != '1' || msg[6] != '=') return UNKNOWN;	//does not conform to a PJLink Response
 	if(msg[7] == 'O' && msg[8] == 'K') return OK;						//OK from any command
 	if(msg[7] == 'E') return ERROR;										//ERROR from any command
 
@@ -24,7 +24,6 @@ PJLinkParser::PJLinkResponse PJLinkParser::parseMessage(char * msg) {
 		command[i-2] = msg[i];
 	}
 	command[4] = '\0';
-	Log.Debug("PJLP CMD %s%s",command, CR);
 
 	//match to command
 	if(strcmp("AVMT", command) == 0){

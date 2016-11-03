@@ -4,17 +4,20 @@
  *  Created on: 29 Oct 2016
  *      Author: rag
  */
+#pragma once
 
 #ifndef SHUTTERLEDCONTROLLER_H_
 #define SHUTTERLEDCONTROLLER_H_
 
 #include <Arduino.h>
 #include "EventHandler.h"
+#include "Timer.h"
 #include "os48.h"
 
-class ShutterLEDController : public EventHandler {
+#define SHUTTER_LED_BLINK_INTERVAL 50
 
-	static const uint16_t interval = 50;
+class ShutterLEDController : public EventHandler {
+public:
 
 	enum STATE {
 		UNKNOWN,
@@ -22,11 +25,13 @@ class ShutterLEDController : public EventHandler {
 		OPEN,
 		CLOSING,
 		CLOSED
-	} state, target;
-
+	};
+private:
+	static const char * DEBUG_NAME;
+	STATE state, target;
 	os48::Mutex m;
 	uint8_t connected, open, greenPin, redPin, greenState, redState;
-	unsigned long lastBlinkTime;
+	Timer blinkTimer;
 	void enter();
 	void execute();
 	void exit();
@@ -59,6 +64,7 @@ public:
 	virtual ~ShutterLEDController();
 	void run();
 	virtual void onEvent(Event e);
+	ShutterLEDController::STATE getState();
 };
 
 #endif /* SHUTTERLEDCONTROLLER_H_ */

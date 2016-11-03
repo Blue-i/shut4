@@ -7,6 +7,9 @@
 
 #include "ShutterLEDController.h"
 #include "Logging.h"
+#include "Arduino.h"
+
+const char * ShutterLEDController::DEBUG_NAME = "LEDControl";
 
 ShutterLEDController::ShutterLEDController(uint8_t green, uint8_t red) :
 	state(UNKNOWN),
@@ -17,9 +20,13 @@ ShutterLEDController::ShutterLEDController(uint8_t green, uint8_t red) :
 	redPin(red),
 	greenState(LOW),
 	redState(LOW),
-	lastBlinkTime(0){
-	// TODO Auto-generated constructor stub
-
+	blinkTimer(SHUTTER_LED_BLINK_INTERVAL){
+	OS48_ATOMIC_BLOCK{
+		digitalWrite(greenPin, HIGH);
+		greenState = HIGH;
+		digitalWrite(redPin, HIGH);
+		redState = HIGH;
+	}
 }
 
 void ShutterLEDController::enter() {
@@ -89,7 +96,6 @@ void ShutterLEDController::changeState(STATE s) {
 }
 
 void ShutterLEDController::enterUnknown() {
-	Log.Debug("L > UK%s",CR);
 	OS48_ATOMIC_BLOCK{
 		digitalWrite(greenPin, HIGH);
 		greenState = HIGH;
@@ -103,24 +109,21 @@ void ShutterLEDController::executeUnknown() {
 }
 
 void ShutterLEDController::exitUnknown() {
-	Log.Debug("L < UK%s",CR);
 }
 
 void ShutterLEDController::enterOpening() {
-	Log.Debug("L > Op%s",CR);
 	OS48_ATOMIC_BLOCK{
 		digitalWrite(greenPin, HIGH);
 		greenState = HIGH;
 		digitalWrite(redPin, LOW);
 		redState = LOW;
 	}
-	lastBlinkTime = millis();
+	blinkTimer.reset();
 }
 
 void ShutterLEDController::executeOpening() {
-	unsigned long elapsedTime = millis() - lastBlinkTime;
-	if(elapsedTime > interval){
 
+	if(blinkTimer.completed()){
 		if(greenState == HIGH){
 			OS48_ATOMIC_BLOCK{
 				digitalWrite(greenPin, LOW);
@@ -132,16 +135,14 @@ void ShutterLEDController::executeOpening() {
 				greenState = HIGH;
 			}
 		}
-		lastBlinkTime = millis();
+		blinkTimer.reset();
 	}
 }
 
 void ShutterLEDController::exitOpening() {
-	Log.Debug("L < Op%s",CR);
 }
 
 void ShutterLEDController::enterOpen() {
-	Log.Debug("L > O%s",CR);
 	OS48_ATOMIC_BLOCK{
 		digitalWrite(greenPin, HIGH);
 		greenState = HIGH;
@@ -154,22 +155,21 @@ void ShutterLEDController::executeOpen() {
 }
 
 void ShutterLEDController::exitOpen() {
-	Log.Debug("L < O%s",CR);
+	//Log.Debug("L < O%s",CR);
 }
 
 void ShutterLEDController::enterClosing() {
-	Log.Debug("L > Cg%s",CR);
 	OS48_ATOMIC_BLOCK{
 		digitalWrite(greenPin, LOW);
 		greenState = LOW;
 		digitalWrite(redPin, HIGH);
 		redState = HIGH;
 	}
+	blinkTimer.reset();
 }
 
 void ShutterLEDController::executeClosing() {
-	unsigned long elapsedTime = millis() - lastBlinkTime;
-	if(elapsedTime > interval){
+	if(blinkTimer.completed()){
 		if(redState == HIGH){
 			OS48_ATOMIC_BLOCK{
 				digitalWrite(redPin, LOW);
@@ -181,16 +181,14 @@ void ShutterLEDController::executeClosing() {
 				redState = HIGH;
 			}
 		}
-		lastBlinkTime = millis();
+		blinkTimer.reset();
 	}
 }
 
 void ShutterLEDController::exitClosing() {
-	Log.Debug("L < Cg%s",CR);
 }
 
 void ShutterLEDController::enterClosed() {
-	Log.Debug("L > C%s",CR);
 	OS48_ATOMIC_BLOCK{
 		digitalWrite(greenPin, LOW);
 		greenState = LOW;
@@ -203,7 +201,6 @@ void ShutterLEDController::executeClosed() {
 }
 
 void ShutterLEDController::exitClosed() {
-	Log.Debug("L < C%s",CR);
 }
 
 ShutterLEDController::~ShutterLEDController() {
@@ -230,7 +227,9 @@ void ShutterLEDController::checkState() {
 
 	if(targetState == OPEN){
 		if(connCount == openCount){
-			if(currentState != OPEN) changeState(OPEN);
+			if(currentState != OPEN) {
+				changeState(OPEN);
+			}
 			return;
 		} else if (connCount > 0 && currentState != OPENING) {
 			changeState(OPENING);
@@ -239,7 +238,9 @@ void ShutterLEDController::checkState() {
 	}
 	if(targetState == CLOSED){
 		if(openCount == 0){
-			if(currentState != CLOSED) changeState(CLOSED);
+			if(currentState != CLOSED) {
+				changeState(CLOSED);
+			}
 			return;
 		} else {
 			if(currentState != CLOSING){
@@ -251,7 +252,7 @@ void ShutterLEDController::checkState() {
 }
 
 void ShutterLEDController::onEvent(Event e) {
-	Log.Debug("L EV %d%s",e,CR);
+	Log.Debug("%s ev %d%s",ShutterLEDController::DEBUG_NAME, e, CR);
 	switch (e){
 	case NO_EVENT:
 		break;
@@ -267,7 +268,7 @@ void ShutterLEDController::onEvent(Event e) {
 		break;
 	case PROJECTOR_CONNECTED:
 		m.lock();
-		connected++;
+		if(connected < 4) connected++;
 		m.unlock();
 		break;
 	case PROJECTOR_DISCONNECTED:
@@ -277,7 +278,7 @@ void ShutterLEDController::onEvent(Event e) {
 		break;
 	case SHUTTER_OPENED:
 		m.lock();
-		open++;
+		if(open < connected) open++;
 		m.unlock();
 		break;
 	case SHUTTER_CLOSED:
@@ -288,4 +289,12 @@ void ShutterLEDController::onEvent(Event e) {
 	case MAX_EVENT:
 		break;
 	}
+	m.lock();
+	Log.Debug("%s conn %d open %d%s",ShutterLEDController::DEBUG_NAME, connected, open, CR);
+	m.unlock();
+
+}
+
+ShutterLEDController::STATE ShutterLEDController::getState() {
+	return state;
 }

@@ -9,8 +9,6 @@
 #include <Logging.h>
 
 EventManager::EventManager() :
-	head(events),
-	tail(events),
 	numHandlers(0),
 	externalEventUpdate(false),
 	externalEvent(NO_EVENT) {
@@ -23,24 +21,16 @@ EventManager::~EventManager() {
 }
 
 void EventManager::queueEvent(Event e) {
-		mutex.lock();
-		if(head == tail){
-			*head = e;
-			tail = events + ((tail - events + 1) % MAX_EVENTS);
-		} else {
-			Event * next = events + ((tail - events + 1) % MAX_EVENTS);
-			if(next != head) {
-				*tail = e;
-				tail = next;
-			}
-		}
-		mutex.unlock();
+	mutex.lock();
+	events.enqueue(e);
+	mutex.unlock();
 }
 
 void EventManager::addHandler(EventHandler* h) {
 	mutex.lock();
-	if(numHandlers < MAX_HANDLERS){
-		handlers[numHandlers++] = h;
+	if(numHandlers < EM_MAX_HANDLERS){
+		handlers[numHandlers] = h;
+		numHandlers++;
 	}
 	mutex.unlock();
 }
@@ -49,14 +39,14 @@ void EventManager::run() {
 	Event e = NO_EVENT;
 
 	mutex.lock();
-	if(head != tail){
-		e = *head;
-		head = events + ((head - events + 1) % MAX_EVENTS);
+	uint8_t h = numHandlers;
+	if(!events.isEmpty()){
+		e = events.dequeue();
 	}
 	mutex.unlock();
 
 	if(e != NO_EVENT){
-		for(uint8_t i = 0; i < numHandlers; i++){
+		for(uint8_t i = 0; i < h; i++){
 			handlers[i]->onEvent(e);
 		}
 	}
@@ -70,7 +60,7 @@ void EventManager::run() {
 	}
 
 	if(e != NO_EVENT){
-		for(uint8_t i = 0; i < numHandlers; i++){
+		for(uint8_t i = 0; i < h; i++){
 			handlers[i]->onEvent(e);
 		}
 	}

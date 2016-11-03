@@ -4,6 +4,7 @@
  *  Created on: 25 Oct 2016
  *      Author: rag
  */
+#pragma once
 
 #ifndef EVENTS_EVENTHANDLER_H_
 #define EVENTS_EVENTHANDLER_H_
