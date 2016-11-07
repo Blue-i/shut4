@@ -19,6 +19,7 @@ Projector::Projector(EthernetClient *client, IPAddress * ip, uint16_t port, Even
 	shutter(sh)
 {
 	sh->bind(this,buffer,Projector::BUFFER_SIZE);
+	pollTimer.expire();
 }
 
 Projector::Projector(EthernetClient *client, IPAddress *ip, uint16_t port, EventBus *bus,  Component<Device>* sh, uint8_t id) :
@@ -33,33 +34,32 @@ Projector::Projector(EthernetClient *client, IPAddress *ip, uint16_t port, Event
 	shutter(sh)
 {
 	sh->bind(this,buffer,Projector::BUFFER_SIZE);
+	pollTimer.expire();
 }
 
 void Projector::enter() {
-	switch(state){
-	case CONNECTING:
+	if(state == CONNECTING){
 		enterConnecting();
-		break;
-	case CONNECTED:
+		return;
+	} else if(state == CONNECTED){
 		enterConnected();
-		break;
-	case POLLING:
+		return;
+	} else if(state == POLLING){
 		enterPolling();
-		break;
+		return;
 	}
 }
 
 void Projector::exit() {
-	switch(state){
-	case CONNECTING:
+	if(state == CONNECTING){
 		exitConnecting();
-		break;
-	case CONNECTED:
+		return;
+	} else if(state == CONNECTED){
 		exitConnected();
-		break;
-	case POLLING:
+		return;
+	} else if(state == POLLING){
 		exitPolling();
-		break;
+		return;
 	}
 }
 
@@ -79,15 +79,20 @@ void Projector::executeConnecting() {
 	bool status = false;
 	status = client->connected();
 	if(status) {
+		Log.Debug("%s %d conn0\r\n", Projector::DEBUG_NAME, id);
 		changeState(CONNECTED);
 		return;
 	}
 
 	if(pollTimer.completed()){
+		Log.Debug("%s %d conn1\r\n", Projector::DEBUG_NAME, id);
 		pollTimer.reset();
 		status = client->connect(*ip, port);
+
 		if(status){
+			Log.Debug("%s %d conn2\r\n", Projector::DEBUG_NAME, id);
 			size_t bytesRead = readFor(buffer, Projector::BUFFER_SIZE, PROJECTOR_READ_TIMEOUT);
+
 			if(bytesRead > 0){
 				Log.Debug("%s got %s\r\n", Projector::DEBUG_NAME, buffer);
 				bus->queueEvent(PROJECTOR_CONNECTED);
@@ -96,6 +101,7 @@ void Projector::executeConnecting() {
 				return;
 			}
 		}
+		Log.Debug("%s %d conn3\r\n", Projector::DEBUG_NAME, id);
 		client->stop();
 		client->flush();
 	}
@@ -130,13 +136,13 @@ void Projector::enterPolling() {
 }
 
 void Projector::executePolling() {
-	if(pollTimer.completed()){
+//	if(pollTimer.completed()){
 		size_t bytesRead = 0;
 		OS48_NO_CS_BLOCK{
 			client->print(Projector::POLL_MESSAGE);
 			bytesRead = readFor(buffer, Projector::BUFFER_SIZE, PROJECTOR_READ_TIMEOUT);
 		}
-		pollTimer.reset();
+//		pollTimer.reset();
 
 		if(bytesRead > 0){
 			Log.Debug("%s got %s\r\n", Projector::DEBUG_NAME, buffer);
@@ -148,8 +154,9 @@ void Projector::executePolling() {
 		digitalWrite(id, LOW);
 		shutter->reset();
 		client->stop();
+		Log.Debug("%s stopped\r\n", Projector::DEBUG_NAME);
 		changeState(CONNECTING);
-	}
+//	}
 }
 
 void Projector::exitPolling() {
@@ -204,16 +211,15 @@ void Projector::reset() {
 }
 
 void Projector::run() {
-	switch(state){
-	case CONNECTING:
+	if(state == CONNECTING){
 		executeConnecting();
-		break;
-	case CONNECTED:
+		return;
+	} else if(state == CONNECTED){
 		executeConnected();
-		break;
-	case POLLING:
+		return;
+	} else if(state == POLLING){
 		executePolling();
-		break;
+		return;
 	}
 }
 

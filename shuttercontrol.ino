@@ -19,6 +19,8 @@
 #define CLOSE_LED 6
 #define LED1 7
 #define LED2 8
+#define LED3 9
+#define LED4 11
 #define PJLINK_PORT 4352
 
 using namespace os48;
@@ -28,36 +30,37 @@ Task * tEvent;
 Task * tled;
 Task * tp1;
 Task * tp2;
-
 EventManager em;
 ShutterLEDController lc(OPEN_LED,CLOSE_LED);
-//
+
 Train fastTrain;
 Train slowTrain;
 
-//byte mac[] = { 0x90, 0xA2, 0xDA, 0x10, 0x87, 0x72 };
-//byte mac[] = { 0x90, 0xA2, 0xDA, 0x10, 0xB9, 0x7D };
-//byte mac[] = { 0x90, 0xA2, 0xDA, 0x10, 0xB9, 0x87 };
-//byte mac[] = { 0x90, 0xA2, 0xDA, 0x10, 0xBA, 0x2B };
-//byte mac[] = { 0x90, 0xA2, 0xDA, 0x10, 0xB9, 0x3D };
-//byte mac[] = { 0x90, 0xA2, 0xDA, 0x10, 0x87, 0x46 };
-//byte mac[] = { 0x90, 0xA2, 0xDA, 0x10, 0x84, 0xDD };
 byte mac[] = { 0x90, 0xA2, 0xDA, 0x10, 0x85, 0x38 };
+
 IPAddress dnsip(10, 0, 0, 254);
 IPAddress gateway(10, 0, 0, 254);
 IPAddress subnet(255, 255, 255, 0);
 IPAddress ip0(10, 0, 0, 10);
 IPAddress ip1(10, 0, 0, 11);
 IPAddress ip2(10, 0, 0, 12);
-//IPAddress ip3(10, 0, 0, 13);
+IPAddress ip3(10, 0, 0, 13);
+IPAddress ip4(10, 0, 0, 14);
 
 EthernetClient c1;
 EthernetClient c2;
+EthernetClient c3;
+EthernetClient c4;
+
 Shutter s1(&em);
 Shutter s2(&em);
+Shutter s3(&em);
+Shutter s4(&em);
+
 Projector p1(&c1, &ip1, PJLINK_PORT, &em, &s1, LED1);
 Projector p2(&c2, &ip2, PJLINK_PORT, &em, &s2, LED2);
-
+Projector p3(&c3, &ip3, PJLINK_PORT, &em, &s3, LED3);
+Projector p4(&c4, &ip4, PJLINK_PORT, &em, &s4, LED4);
 
 
 void isr_open()
@@ -83,7 +86,7 @@ void isr_close()
 void flash(){
 	Timer t(100);
 	for(uint8_t i = 0; i < 5; ++i){
-		digitalWrite(LED2, LOW);
+		digitalWrite(LED4, LOW);
 		digitalWrite(CLOSE_LED, HIGH);
 		while(!t.completed()){}
 		t.reset();
@@ -99,12 +102,22 @@ void flash(){
 		digitalWrite(LED2, HIGH);
 		while(!t.completed()){}
 		t.reset();
+		digitalWrite(LED2, LOW);
+		digitalWrite(LED3, HIGH);
+		while(!t.completed()){}
+		t.reset();
+		digitalWrite(LED3, LOW);
+		digitalWrite(LED4, HIGH);
+		while(!t.completed()){}
+		t.reset();
 	}
 
 	digitalWrite(CLOSE_LED, LOW);
 	digitalWrite(OPEN_LED, LOW);
 	digitalWrite(LED1, LOW);
 	digitalWrite(LED2, LOW);
+	digitalWrite(LED3, LOW);
+	digitalWrite(LED4, LOW);
 
 }
 void setup()
@@ -119,6 +132,8 @@ void setup()
 	pinMode(OPEN_LED, OUTPUT);
 	pinMode(LED1, OUTPUT);
 	pinMode(LED2, OUTPUT);
+	pinMode(LED3, OUTPUT);
+	pinMode(LED4, OUTPUT);
 
 	digitalWrite(CLOSE_LED, LOW);
 	digitalWrite(OPEN_LED, LOW);
@@ -130,15 +145,21 @@ void setup()
 
 	flash();
 
-	em.addHandler(&s1);
 	em.addHandler(&lc);
+	em.addHandler(&s1);
 	em.addHandler(&s2);
+	em.addHandler(&s3);
+	em.addHandler(&s4);
+
 	slowTrain.enqueue(&p1);
 	slowTrain.enqueue(&p2);
+	slowTrain.enqueue(&p3);
+	slowTrain.enqueue(&p4);
+
 	delay(3000);
 
-	tp1 = scheduler->createTask(&loop1, 192);
-	tp2 = scheduler->createTask(&loop2, 148);
+	tp1 = scheduler->createTask(&loop1, 128);
+	tp2 = scheduler->createTask(&loop2, 128);
 
 	tEvent->clearStackFootprints();
 	tp1->clearStackFootprints();
@@ -152,28 +173,27 @@ void loop() {
 	;
 }
 
-//Timer timer1(3000);
+Timer timer1(3000);
 void loop1()
 {
 	while(true){
 		Projector * p = slowTrain.dequeue();
 		if(p != nullptr){
-//			Log.Debug("Sl !null %d\r\n", p->id);
+			Log.Debug("Sl !null %d\r\n", p->id);
 			if(p->getState() == Projector::STATE::CONNECTING){
 				p->run();
 			}
 			if(p->getState() != Projector::STATE::CONNECTING){
-//				Log.Debug("Sl !Cn %d st %d\r\n", p->id, p->getState());
 				fastTrain.enqueue(p);
-//				Log.Debug("Ft eq %d\r\n",p->id);
 			} else {
-//				Log.Debug("Sl Cn %d\r\n", p->id);
 				slowTrain.enqueue(p);
-//				Log.Debug("Sl eq %d\r\n",p->id);
 			}
 		}
-		task()->sleep(100);
-//		}
+		if(timer1.completed()){
+			Log.Debug("SlowTrain ss: %d\r\n", task()->getLastStackFootprint());
+			timer1.reset();
+		}
+		task()->sleep(10000);
 	}
 }
 
@@ -181,19 +201,14 @@ Timer timer2(3000);
 void loop2()
 {
 	while(true){
-//		Log.Debug("Fast -1\r\n");
 		em.run();
 		lc.run();
-//		Log.Debug("Fast 0\r\n");
 		Projector * p = fastTrain.dequeue();
 		if(p != nullptr){
-//			Log.Debug("FAST\r\n");
 			p->run();
 			if(p->getState() == Projector::STATE::CONNECTING){
-//				Log.Debug("FAST 2\r\n");
 				slowTrain.enqueue(p);
 			} else {
-//				Log.Debug("FAST 3\r\n");
 				fastTrain.enqueue(p);
 			}
 		}

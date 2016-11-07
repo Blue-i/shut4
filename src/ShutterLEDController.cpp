@@ -30,62 +30,41 @@ ShutterLEDController::ShutterLEDController(uint8_t green, uint8_t red) :
 }
 
 void ShutterLEDController::enter() {
-	switch(state){
-	case UNKNOWN:
+	if(state == UNKNOWN){
 		enterUnknown();
-		break;
-	case OPENING:
+		return;
+	} else if(state == OPENING){
 		enterOpening();
-		break;
-	case OPEN:
+		return;
+	} else if(state == OPEN){
 		enterOpen();
-		break;
-	case CLOSING:
+		return;
+	} else if(state == CLOSING){
 		enterClosing();
-		break;
-	case CLOSED:
+		return;
+	}else if(state == CLOSED){
 		enterClosed();
-		break;
+		return;
 	}
-}
 
-void ShutterLEDController::execute() {
-	switch(state){
-	case UNKNOWN:
-		executeUnknown();
-		break;
-	case OPENING:
-		executeOpening();
-		break;
-	case OPEN:
-		executeOpen();
-		break;
-	case CLOSING:
-		executeClosing();
-		break;
-	case CLOSED:
-		executeClosed();
-		break;
-	}
 }
 
 void ShutterLEDController::exit() {
-	switch(state){
-	case UNKNOWN:
+	if(state == UNKNOWN){
 		exitUnknown();
-		break;
-	case OPENING:
+		return;
+	} else if(state == OPENING){
 		exitOpening();
-		break;
-	case OPEN:
+		return;
+	} else if(state == OPEN){
 		exitOpen();
-		break;
-	case CLOSING:
+		return;
+	} else if(state == CLOSING){
 		exitClosing();
-		break;
-	case CLOSED:
+		return;
+	}else if(state == CLOSED){
 		exitClosed();
-		break;
+		return;
 	}
 }
 
@@ -208,8 +187,27 @@ ShutterLEDController::~ShutterLEDController() {
 }
 
 void ShutterLEDController::run() {
-	execute();
-	checkState();
+	if(state == UNKNOWN){
+		executeUnknown();
+		checkState();
+		return;
+	} else if(state == OPENING){
+		executeOpening();
+		checkState();
+		return;
+	} else if(state == OPEN){
+		executeOpen();
+		checkState();
+		return;
+	} else if(state == CLOSING){
+		executeClosing();
+		checkState();
+		return;
+	}else if(state == CLOSED){
+		executeClosed();
+		checkState();
+		return;
+	}
 }
 
 void ShutterLEDController::checkState() {
@@ -253,46 +251,37 @@ void ShutterLEDController::checkState() {
 
 void ShutterLEDController::onEvent(Event e) {
 	Log.Debug("%s ev %d%s",ShutterLEDController::DEBUG_NAME, e, CR);
-	switch (e){
-	case NO_EVENT:
-		break;
-	case SHUTTER_OPEN_BUTTON_PRESS:
+	if(e == NO_EVENT){
+
+	} else if(e == SHUTTER_OPEN_BUTTON_PRESS){
 		m.lock();
 		target = OPEN;
 		m.unlock();
-		break;
-	case SHUTTER_CLOSE_BUTTON_PRESS:
+	} else if(e == SHUTTER_CLOSE_BUTTON_PRESS){
 		m.lock();
 		target = CLOSED;
 		m.unlock();
-		break;
-	case PROJECTOR_CONNECTED:
+	} else if(e == PROJECTOR_CONNECTED){
 		m.lock();
 		if(connected < 4) connected++;
 		m.unlock();
-		break;
-	case PROJECTOR_DISCONNECTED:
+	} else if(e == PROJECTOR_DISCONNECTED){
 		m.lock();
 		if(connected > 0) connected--;
 		m.unlock();
-		break;
-	case SHUTTER_OPENED:
+	} else if(e == SHUTTER_OPENED){
 		m.lock();
 		if(open < connected) open++;
 		m.unlock();
-		break;
-	case SHUTTER_CLOSED:
+	} else if(e == SHUTTER_CLOSED){
 		m.lock();
 		if(open > 0) open--;
 		m.unlock();
-		break;
-	case MAX_EVENT:
-		break;
 	}
+
 	m.lock();
 	Log.Debug("%s conn %d open %d%s",ShutterLEDController::DEBUG_NAME, connected, open, CR);
 	m.unlock();
-
 }
 
 ShutterLEDController::STATE ShutterLEDController::getState() {

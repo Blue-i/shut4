@@ -1,9 +1,3 @@
-/*
- * Device.h
- *
- *  Created on: 31 Oct 2016
- *      Author: rag
- */
 #pragma once
 
 #ifndef DEVICE_H_

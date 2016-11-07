@@ -1,9 +1,3 @@
-/*
- * EventBus.h
- *
- *  Created on: 1 Nov 2016
- *      Author: rag
- */
 #pragma once
 
 #ifndef EVENTBUS_H_

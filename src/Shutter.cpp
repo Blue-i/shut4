@@ -45,42 +45,40 @@ PJLinkParser::PJLinkResponse Shutter::getShutterState() {
 }
 
 void Shutter::enter() {
-	switch(state){
-	case UNKNOWN:
+	if(state == UNKNOWN){
 		enterUnknown();
-		break;
-	case OPENING:
+		return;
+	} else if(state == OPENING){
 		enterOpening();
-		break;
-	case OPEN:
+		return;
+	} else if(state == OPEN){
 		enterOpen();
-		break;
-	case CLOSING:
+		return;
+	} else if(state == CLOSING){
 		enterClosing();
-		break;
-	case CLOSED:
+		return;
+	} else if (state == CLOSED){
 		enterClosed();
-		break;
+		return;
 	}
 }
 
 void Shutter::exit() {
-	switch(state){
-	case UNKNOWN:
+	if(state == UNKNOWN){
 		exitUnknown();
-		break;
-	case OPENING:
+		return;
+	} else if(state == OPENING){
 		exitOpening();
-		break;
-	case OPEN:
+		return;
+	} else if(state == OPEN){
 		exitOpen();
-		break;
-	case CLOSING:
+		return;
+	} else if(state == CLOSING){
 		exitClosing();
-		break;
-	case CLOSED:
+		return;
+	} else if (state == CLOSED){
 		exitClosed();
-		break;
+		return;
 	}
 }
 
@@ -98,6 +96,7 @@ void Shutter::enterUnknown() {
 
 void Shutter::executeUnknown() {
 	if(!pollTimer.completed()) return;
+	pollTimer.reset();
 	uint8_t bytesRead = 0;
 	OS48_NO_CS_BLOCK{
 		device->write(Shutter::queryMessage);
@@ -113,20 +112,16 @@ void Shutter::executeUnknown() {
 
 	PJLinkParser::PJLinkResponse resp = PJLinkParser::instance()->parseMessage(buffer);
 
-	switch (resp){
-	case PJLinkParser::AVMT_ON:
+	if(resp == PJLinkParser::AVMT_ON){
 		bus->queueEvent(SHUTTER_CLOSED);
 		onEvent(SHUTTER_CLOSE_BUTTON_PRESS);
 		changeState(CLOSED);
-		break;
-	case PJLinkParser::AVMT_OFF:
+		return;
+	} else if(resp == PJLinkParser::AVMT_OFF){
 		bus->queueEvent(SHUTTER_OPENED);
 		onEvent(SHUTTER_OPEN_BUTTON_PRESS);
 		changeState(OPEN);
-		break;
-	default:
-		//do nothing
-		break;
+		return;
 	}
 }
 
@@ -303,22 +298,21 @@ bool Shutter::isBound() {
 }
 
 void Shutter::run() {
-	switch(state){
-	case UNKNOWN:
+	if(state == UNKNOWN){
 		executeUnknown();
-		break;
-	case OPENING:
+		return;
+	} else if(state == OPENING){
 		executeOpening();
-		break;
-	case OPEN:
+		return;
+	} else if(state == OPEN){
 		executeOpen();
-		break;
-	case CLOSING:
+		return;
+	} else if(state == CLOSING){
 		executeClosing();
-		break;
-	case CLOSED:
+		return;
+	} else if (state == CLOSED){
 		executeClosed();
-		break;
+		return;
 	}
 }
 
@@ -333,20 +327,16 @@ void Shutter::reset() {
 }
 
 void Shutter::onEvent(Event e) {
-	switch(e){
-	case SHUTTER_OPEN_BUTTON_PRESS:
+	if(e == SHUTTER_OPEN_BUTTON_PRESS){
 		m.lock();
 		target = OPEN;
 		m.unlock();
-		break;
-	case SHUTTER_CLOSE_BUTTON_PRESS:
+		return;
+	} else if(e == SHUTTER_CLOSE_BUTTON_PRESS){
 		m.lock();
 		target = CLOSED;
 		m.unlock();
-		break;
-	default:
-		//do nothing to any other events
-		break;
+		return;
 	}
 }
 
