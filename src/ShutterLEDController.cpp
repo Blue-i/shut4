@@ -223,6 +223,7 @@ void ShutterLEDController::checkState() {
 	connCount = connected;
 	m.unlock();
 
+
 	if(targetState == OPEN){
 		if(connCount == openCount){
 			if(currentState != OPEN) {

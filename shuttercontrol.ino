@@ -26,8 +26,8 @@
 using namespace os48;
 Scheduler* scheduler = Scheduler::get();
 
-Task * tEvent;
-Task * tled;
+//Task * tEvent;
+//Task * tled;
 Task * tp1;
 Task * tp2;
 EventManager em;
@@ -44,23 +44,22 @@ IPAddress subnet(255, 255, 255, 0);
 IPAddress ip0(10, 0, 0, 10);
 IPAddress ip1(10, 0, 0, 11);
 IPAddress ip2(10, 0, 0, 12);
-IPAddress ip3(10, 0, 0, 13);
-IPAddress ip4(10, 0, 0, 14);
+//IPAddress ip3(10, 0, 0, 13);
 
 EthernetClient c1;
 EthernetClient c2;
-EthernetClient c3;
-EthernetClient c4;
+//EthernetClient c3;
+
 
 Shutter s1(&em);
 Shutter s2(&em);
-Shutter s3(&em);
-Shutter s4(&em);
+//Shutter s3(&em);
+
 
 Projector p1(&c1, &ip1, PJLINK_PORT, &em, &s1, LED1);
 Projector p2(&c2, &ip2, PJLINK_PORT, &em, &s2, LED2);
-Projector p3(&c3, &ip3, PJLINK_PORT, &em, &s3, LED3);
-Projector p4(&c4, &ip4, PJLINK_PORT, &em, &s4, LED4);
+//Projector p3(&c3, &ip3, PJLINK_PORT, &em, &s3, LED3);
+
 
 
 void isr_open()
@@ -148,20 +147,20 @@ void setup()
 	em.addHandler(&lc);
 	em.addHandler(&s1);
 	em.addHandler(&s2);
-	em.addHandler(&s3);
-	em.addHandler(&s4);
+//	em.addHandler(&s3);
+//	em.addHandler(&s4);
 
 	slowTrain.enqueue(&p1);
 	slowTrain.enqueue(&p2);
-	slowTrain.enqueue(&p3);
-	slowTrain.enqueue(&p4);
+//	slowTrain.enqueue(&p3);
+//	slowTrain.enqueue(&p4);
 
 	delay(3000);
 
 	tp1 = scheduler->createTask(&loop1, 128);
 	tp2 = scheduler->createTask(&loop2, 128);
 
-	tEvent->clearStackFootprints();
+//	tEvent->clearStackFootprints();
 	tp1->clearStackFootprints();
 	tp2->clearStackFootprints();
 
@@ -170,7 +169,18 @@ void setup()
 }
 
 void loop() {
-	;
+//	em.run();
+//	lc.run();
+//	p1.run();
+//	em.run();
+//	lc.run();
+//	p2.run();
+//	em.run();
+//	lc.run();
+//	p3.run();
+//	em.run();
+//	lc.run();
+//	p4.run();
 }
 
 Timer timer1(3000);
@@ -193,11 +203,12 @@ void loop1()
 			Log.Debug("SlowTrain ss: %d\r\n", task()->getLastStackFootprint());
 			timer1.reset();
 		}
-		task()->sleep(10000);
+		task()->sleep(1000);
 	}
 }
 
 Timer timer2(3000);
+//Timer resetTimer(30000);
 void loop2()
 {
 	while(true){
@@ -217,6 +228,11 @@ void loop2()
 			Log.Debug("Free mem: %d\r\n", scheduler->getFreeMemorySize());
 			timer2.reset();
 		}
+//		if(resetTimer.completed()){
+//			Log.Debug("RESET\r\n");
+//			tp1->reset();
+//			resetTimer.reset();
+//		}
 	}
 }
 
