@@ -44,21 +44,21 @@ IPAddress subnet(255, 255, 255, 0);
 IPAddress ip0(10, 0, 0, 10);
 IPAddress ip1(10, 0, 0, 11);
 IPAddress ip2(10, 0, 0, 12);
-//IPAddress ip3(10, 0, 0, 13);
+IPAddress ip3(10, 0, 0, 13);
 
 EthernetClient c1;
 EthernetClient c2;
-//EthernetClient c3;
+EthernetClient c3;
 
 
 Shutter s1(&em);
 Shutter s2(&em);
-//Shutter s3(&em);
+Shutter s3(&em);
 
 
 Projector p1(&c1, &ip1, PJLINK_PORT, &em, &s1, LED1);
 Projector p2(&c2, &ip2, PJLINK_PORT, &em, &s2, LED2);
-//Projector p3(&c3, &ip3, PJLINK_PORT, &em, &s3, LED3);
+Projector p3(&c3, &ip3, PJLINK_PORT, &em, &s3, LED3);
 
 
 
@@ -147,12 +147,12 @@ void setup()
 	em.addHandler(&lc);
 	em.addHandler(&s1);
 	em.addHandler(&s2);
-//	em.addHandler(&s3);
+	em.addHandler(&s3);
 //	em.addHandler(&s4);
 
 	slowTrain.enqueue(&p1);
 	slowTrain.enqueue(&p2);
-//	slowTrain.enqueue(&p3);
+	slowTrain.enqueue(&p3);
 //	slowTrain.enqueue(&p4);
 
 	delay(3000);
