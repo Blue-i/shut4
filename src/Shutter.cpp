@@ -131,6 +131,7 @@ void Shutter::exitUnknown() {
 
 void Shutter::enterOpen() {
 	Log.Debug("%s > O\r\n", Shutter::DEBUG_NAME);
+	pollTimer.reset();
 }
 
 void Shutter::executeOpen() {
@@ -212,7 +213,8 @@ void Shutter::exitOpening() {
 
 void Shutter::enterClosed() {
 	Log.Debug("%s > C\r\n", Shutter::DEBUG_NAME);
-	bus->queueEvent(SHUTTER_CLOSED);
+//	bus->queueEvent(SHUTTER_CLOSED);
+	pollTimer.reset();
 }
 
 void Shutter::executeClosed() {
